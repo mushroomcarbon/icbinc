@@ -4,8 +4,8 @@ Tool that displays markdown files like Claude's renderer, with the whole ivory +
 
 ## Usage
 
-- `Ctrl+Shift+V` (Cmd on mac) — open preview
-- `Ctrl+K V` — open preview to the side
+- `Ctrl+Shift+V` (Cmd on mac): open preview
+- `Ctrl+K V`: open preview to the side
 - Light/dark follows your VS Code theme automatically.
 
 The preview's CSP blocks remote fonts, so install these locally for the
