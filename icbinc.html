@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I Can't Believe It's Not Claude</title>
+
+<!-- Rendering + highlighting -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+<!-- Closest free stand-ins for Tiempos Text (prose) and Styrene (UI) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  /* ============ Anthropic-ish palette ============ */
+  :root {
+    --bg: #FAF9F5;            /* ivory */
+    --bg-raised: #F5F4ED;     /* slightly deeper ivory for code/quotes */
+    --ink: #141413;           /* slate */
+    --ink-soft: #5E5D59;      /* muted text */
+    --ink-faint: #87867F;
+    --rule: #E8E6DC;          /* hairlines */
+    --accent: #C2410C;        /* terracotta, darkened for contrast on ivory */
+    --accent-warm: #D97757;   /* claude orange, decorative use */
+    --selection: #F0E7DA;
+    --shadow: 0 1px 3px rgba(20, 20, 19, 0.06), 0 8px 24px rgba(20, 20, 19, 0.05);
+    --serif: "Source Serif 4", "Tiempos Text", Georgia, serif;
+    --sans: "Inter", "Styrene B", -apple-system, system-ui, sans-serif;
+    --mono: "JetBrains Mono", "Berkeley Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  [data-theme="dark"] {
+    --bg: #262624;
+    --bg-raised: #1F1E1C;
+    --ink: #F0EEE7;
+    --ink-soft: #B8B5AC;
+    --ink-faint: #87867F;
+    --rule: #3A3937;
+    --accent: #E8946F;
+    --accent-warm: #D97757;
+    --selection: #4A4538;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.25);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--serif);
+    transition: background 0.25s ease, color 0.25s ease;
+    min-height: 100vh;
+  }
+  ::selection { background: var(--selection); }
+
+  /* ============ Top bar ============ */
+  .bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    font-family: var(--sans);
+    font-size: 13px;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--rule);
+    transition: transform 0.3s ease, background 0.25s ease;
+  }
+  .bar.hidden { transform: translateY(-100%); }
+  .bar .filename {
+    color: var(--ink-soft);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: auto;
+    font-weight: 500;
+  }
+  .bar .mark {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent-warm);
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #FAF9F5;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .btn {
+    appearance: none;
+    border: 1px solid var(--rule);
+    background: transparent;
+    color: var(--ink-soft);
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg-raised); color: var(--ink); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ============ Drop / empty state ============ */
+  .empty {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 24px;
+    text-align: center;
+  }
+  .empty h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(28px, 5vw, 40px);
+    letter-spacing: -0.01em;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    line-height: 1.1;
+  }
+  .empty h1 .cant-believe {
+    font-style: italic;
+    font-weight: 400;
+    font-size: 0.42em;
+    letter-spacing: 0.01em;
+    color: var(--ink-soft);
+    transform: rotate(-2deg);
+  }
+  .empty h1 .not-claude {
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+  .empty h1 .not-claude .star { color: var(--accent-warm); font-weight: 500; }
+  .empty h1 .reg {
+    font-family: var(--sans);
+    font-size: 0.28em;
+    font-weight: 500;
+    vertical-align: super;
+    color: var(--ink-faint);
+  }
+  .empty h1 .small {
+    font-family: var(--sans);
+    font-size: 0.20em;
+    font-weight: 500;
+    vertical-align: super;
+    color: var(--ink-faint);
+  }
+  .empty .subtitle {
+    font-family: var(--sans);
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-faint);
+    margin-top: 2px;
+  }
+  .empty p {
+    font-family: var(--sans);
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    margin: 0;
+    max-width: 42ch;
+    line-height: 1.6;
+  }
+  .empty .open-btn {
+    margin-top: 10px;
+    font-size: 14px;
+    padding: 10px 22px;
+    border-radius: 10px;
+    background: var(--ink);
+    color: var(--bg);
+    border: none;
+  }
+  .empty .open-btn:hover { background: var(--accent); color: #FAF9F5; }
+  .empty kbd {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    border: 1px solid var(--rule);
+    border-bottom-width: 2px;
+    border-radius: 5px;
+    padding: 2px 6px;
+    background: var(--bg-raised);
+  }
+  body.dragging::after {
+    content: "Drop your markdown file";
+    position: fixed;
+    inset: 12px;
+    border: 2px dashed var(--accent-warm);
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--sans);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--accent);
+    z-index: 100;
+    pointer-events: none;
+  }
+
+  /* ============ Document ============ */
+  .doc {
+    display: none;
+    max-width: var(--measure, 72ch);
+    margin: 0 auto;
+    padding: 110px 32px 140px;
+    font-size: var(--prose-size, 17px);
+    line-height: 1.7;
+    overflow-wrap: break-word;
+  }
+  body.has-doc .doc { display: block; }
+  body.has-doc .empty { display: none; }
+
+  .doc > :first-child { margin-top: 0; }
+
+  .doc h1, .doc h2, .doc h3, .doc h4, .doc h5, .doc h6 {
+    font-family: var(--serif);
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    line-height: 1.25;
+    margin: 2.2em 0 0.6em;
+    scroll-margin-top: 70px;
+  }
+  .doc h1 { font-size: 2em; font-weight: 600; margin-top: 0.4em; }
+  .doc h2 {
+    font-size: 1.5em;
+    padding-bottom: 0.35em;
+    border-bottom: 1px solid var(--rule);
+  }
+  .doc h3 { font-size: 1.22em; }
+  .doc h4 { font-size: 1.05em; }
+  .doc h5, .doc h6 {
+    font-family: var(--sans);
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+  }
+
+  .doc p { margin: 0 0 1.1em; }
+  .doc strong { font-weight: 600; }
+  .doc a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.15s ease;
+  }
+  .doc a:hover { text-decoration-color: var(--accent); }
+
+  .doc ul, .doc ol { margin: 0 0 1.1em; padding-left: 1.5em; }
+  .doc li { margin: 0.3em 0; }
+  .doc li::marker { color: var(--ink-faint); }
+  .doc li > ul, .doc li > ol { margin-bottom: 0; }
+  .doc input[type="checkbox"] { accent-color: var(--accent); margin-right: 6px; }
+
+  .doc blockquote {
+    margin: 1.4em 0;
+    padding: 2px 0 2px 20px;
+    border-left: 3px solid var(--accent-warm);
+    color: var(--ink-soft);
+    font-style: italic;
+  }
+  .doc blockquote > :last-child { margin-bottom: 0; }
+
+  .doc hr {
+    border: none;
+    border-top: 1px solid var(--rule);
+    margin: 2.5em auto;
+    width: 100%;
+  }
+
+  .doc img {
+    max-width: 100%;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+  }
+
+  /* code */
+  .doc code {
+    font-family: var(--mono);
+    font-size: 0.84em;
+    background: var(--bg-raised);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    padding: 0.12em 0.35em;
+  }
+  .doc pre {
+    background: var(--bg-raised);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 1.4em 0;
+    line-height: 1.55;
+    position: relative;
+  }
+  .doc pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 0.82em;
+    display: block;
+  }
+  .doc pre .copy-code {
+    position: absolute;
+    top: 10px; right: 10px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    font-size: 11px;
+    padding: 4px 9px;
+  }
+  .doc pre:hover .copy-code { opacity: 1; }
+
+  /* tables */
+  .doc .table-wrap { overflow-x: auto; margin: 1.4em 0; }
+  .doc table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.92em;
+    font-variant-numeric: tabular-nums;
+  }
+  .doc th {
+    font-family: var(--sans);
+    font-size: 0.82em;
+    font-weight: 600;
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    border-bottom: 2px solid var(--ink);
+    padding: 8px 14px 8px 0;
+  }
+  .doc td {
+    border-bottom: 1px solid var(--rule);
+    padding: 9px 14px 9px 0;
+    vertical-align: top;
+  }
+  .doc tr:last-child td { border-bottom: none; }
+
+  /* highlight.js — warm, restrained syntax theme tuned to the palette */
+  .hljs-comment, .hljs-quote { color: var(--ink-faint); font-style: italic; }
+  .hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: var(--accent); }
+  .hljs-string, .hljs-attr, .hljs-template-variable { color: #7D8F4E; }
+  [data-theme="dark"] .hljs-string, [data-theme="dark"] .hljs-attr { color: #A8BC7A; }
+  .hljs-number, .hljs-literal { color: #8C6B9E; }
+  [data-theme="dark"] .hljs-number, [data-theme="dark"] .hljs-literal { color: #B79CC9; }
+  .hljs-title, .hljs-function .hljs-title, .hljs-section { color: var(--ink); font-weight: 600; }
+  .hljs-type, .hljs-class .hljs-title { color: #9A6B3F; }
+  [data-theme="dark"] .hljs-type { color: #C9986B; }
+
+  /* footnotes-ish small text */
+  .doc sup { font-family: var(--sans); font-size: 0.7em; }
+
+  @media (max-width: 640px) {
+    .doc { padding: 92px 20px 100px; font-size: 16px; }
+    .bar { padding: 0 10px; }
+    .btn { padding: 6px 9px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    * { transition: none !important; }
+  }
+  @media print {
+    .bar { display: none; }
+    .doc { padding-top: 0; max-width: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar hidden" id="bar">
+  <span class="mark" aria-hidden="true">✳</span>
+  <span class="filename" id="filename"></span>
+  <button class="btn" id="widthBtn" title="Toggle reading width">Width</button>
+  <button class="btn" id="sizeDown" title="Smaller text">A−</button>
+  <button class="btn" id="sizeUp" title="Larger text">A+</button>
+  <button class="btn" id="themeBtn" title="Toggle theme (T)">Theme</button>
+  <button class="btn" id="openBtn2" title="Open another file (O)">Open</button>
+</header>
+
+<div class="empty" id="empty">
+  <h1>
+    <span class="cant-believe">i can't believe it's not</span>
+    <span class="not-claude"><span class="star">✳</span>&nbsp;Claude<span class="small">tnn</span></span>
+  </h1>
+  <div class="subtitle">vibe viewer of .md files</div>
+  <p>Drop a <code style="font-family: var(--mono); font-size: 0.85em;">.md</code> file anywhere on this page, paste markdown directly, or browse for a file. Everything rendered locally!</p>
+  <button class="btn open-btn" id="openBtn">Open a file</button>
+  <p style="font-size: 12.5px; color: var(--ink-faint);">
+    <kbd>O</kbd> open &nbsp;·&nbsp; <kbd>T</kbd> theme &nbsp;·&nbsp; <kbd>Ctrl/⌘ V</kbd> paste markdown
+  </p>
+</div>
+
+<main class="doc" id="doc"></main>
+<input type="file" id="fileInput" accept=".md,.markdown,.mdx,.txt,text/markdown,text/plain" hidden>
+
+<script>
+(function () {
+  const doc = document.getElementById('doc');
+  const bar = document.getElementById('bar');
+  const filenameEl = document.getElementById('filename');
+  const fileInput = document.getElementById('fileInput');
+
+  /* ---------- preferences (best-effort; file:// quirks tolerated) ---------- */
+  const pref = {
+    get(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} }
+  };
+
+  /* theme */
+  const root = document.documentElement;
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = pref.get('mdv-theme', systemDark ? 'dark' : 'light');
+  function toggleTheme() {
+    root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
+    pref.set('mdv-theme', root.dataset.theme);
+  }
+
+  /* font size + measure */
+  let proseSize = parseInt(pref.get('mdv-size', '17'), 10);
+  const widths = ['72ch', '88ch', '100%'];
+  let widthIdx = parseInt(pref.get('mdv-width', '0'), 10);
+  function applyPrefs() {
+    root.style.setProperty('--prose-size', proseSize + 'px');
+    root.style.setProperty('--measure', widths[widthIdx]);
+    pref.set('mdv-size', proseSize);
+    pref.set('mdv-width', widthIdx);
+  }
+  applyPrefs();
+
+  /* ---------- markdown rendering ---------- */
+  marked.setOptions({ gfm: true, breaks: false });
+
+  function render(markdown, name) {
+    const rawHtml = marked.parse(markdown);
+    doc.innerHTML = DOMPurify.sanitize(rawHtml, { ADD_ATTR: ['target'] });
+
+    // syntax highlighting
+    doc.querySelectorAll('pre code').forEach(block => {
+      try { hljs.highlightElement(block); } catch {}
+    });
+
+    // copy buttons on code blocks
+    doc.querySelectorAll('pre').forEach(pre => {
+      const btn = document.createElement('button');
+      btn.className = 'btn copy-code';
+      btn.textContent = 'Copy';
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(pre.querySelector('code')?.innerText ?? '').then(() => {
+          btn.textContent = 'Copied';
+          setTimeout(() => (btn.textContent = 'Copy'), 1500);
+        });
+      });
+      pre.appendChild(btn);
+    });
+
+    // wrap tables for horizontal scroll
+    doc.querySelectorAll('table').forEach(t => {
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      t.parentNode.insertBefore(wrap, t);
+      wrap.appendChild(t);
+    });
+
+    // external links in new tab
+    doc.querySelectorAll('a[href^="http"]').forEach(a => {
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+    });
+
+    document.body.classList.add('has-doc');
+    bar.classList.remove('hidden');
+    filenameEl.textContent = name || 'untitled.md';
+    document.title = (name || 'Markdown') + " — I Can't Believe It's Not Claude";
+    window.scrollTo(0, 0);
+  }
+
+  function loadFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => render(e.target.result, file.name);
+    reader.readAsText(file);
+  }
+
+  /* ---------- inputs: picker, drag-drop, paste ---------- */
+  function openPicker() { fileInput.click(); }
+  document.getElementById('openBtn').addEventListener('click', openPicker);
+  document.getElementById('openBtn2').addEventListener('click', openPicker);
+  fileInput.addEventListener('change', () => loadFile(fileInput.files[0]));
+
+  let dragDepth = 0;
+  window.addEventListener('dragenter', e => { e.preventDefault(); if (++dragDepth === 1) document.body.classList.add('dragging'); });
+  window.addEventListener('dragleave', e => { e.preventDefault(); if (--dragDepth === 0) document.body.classList.remove('dragging'); });
+  window.addEventListener('dragover', e => e.preventDefault());
+  window.addEventListener('drop', e => {
+    e.preventDefault();
+    dragDepth = 0;
+    document.body.classList.remove('dragging');
+    loadFile(e.dataTransfer.files[0]);
+  });
+
+  window.addEventListener('paste', e => {
+    const text = e.clipboardData.getData('text/plain');
+    if (text && text.trim()) render(text, 'pasted.md');
+  });
+
+  /* ---------- controls ---------- */
+  document.getElementById('themeBtn').addEventListener('click', toggleTheme);
+  document.getElementById('sizeUp').addEventListener('click', () => { proseSize = Math.min(24, proseSize + 1); applyPrefs(); });
+  document.getElementById('sizeDown').addEventListener('click', () => { proseSize = Math.max(13, proseSize - 1); applyPrefs(); });
+  document.getElementById('widthBtn').addEventListener('click', () => { widthIdx = (widthIdx + 1) % widths.length; applyPrefs(); });
+
+  window.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 't' || e.key === 'T') toggleTheme();
+    if (e.key === 'o' || e.key === 'O') openPicker();
+  });
+
+  /* auto-hide bar on scroll down, reveal on scroll up */
+  let lastY = 0;
+  window.addEventListener('scroll', () => {
+    if (!document.body.classList.contains('has-doc')) return;
+    const y = window.scrollY;
+    bar.classList.toggle('hidden', y > 80 && y > lastY);
+    lastY = y;
+  }, { passive: true });
+})();
+</script>
+</body>
+</html>
