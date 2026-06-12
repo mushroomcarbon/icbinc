@@ -1,6 +1,6 @@
 # i can't believe it's not Claude markdown preview tool (tnn)
 
-No hassle. No strings attached. Just pure vibes. No handwritten code, just ai slop. Not quality code, just pure slop you can actually slop on. No sentence formats, no good writing - just ai tell after ai tell. 
+No hassle. No strings attached. Just pure vibes. No handwritten code, just ai slop. Not quality code, just pure slop you can actually slop on. No sentence formats, no good writing - just a lot of real ai tells. 
 
 Tool that displays markdown files like Claude's renderer, with the whole ivory + serif + terracotta stuff. Both available as a standalone HTML file/applet and a .vsix that restyles VS Code's **built-in** markdown preview. It hooks the native preview via `markdown.previewStyles`, so everything works out of the box (thanks vscode!)
 
