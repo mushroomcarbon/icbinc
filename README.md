@@ -1,4 +1,4 @@
-# II Can't Believe It's Not) Claude markdown preview tool (tnn)
+# (I Can't Believe It's Not) Claude markdown preview tool (tnn)
 
 Tool that displays markdown files like Claude's renderer, with the whole ivory + serif + terracotta stuff. Both available as a standalone HTML file/applet and a .vsix that restyles VS Code's **built-in** markdown preview. It hooks the native preview via `markdown.previewStyles`, so everything works out of the box (thanks vscode!)
 
