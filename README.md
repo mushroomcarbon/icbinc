@@ -21,27 +21,11 @@ code --install-extension icbinc-markdown-0.1.0.vsix
 
 or Extensions panel → `...` menu → *Install from VSIX...*
 
-## Philosophy
-
-No hassle. No strings attached. Just pure vibes.
-
-No handwritten code — just artisanal, free-range, locally-sourced AI slop. Not quality code. Not maintainable code. Slop. The kind of slop you can actually slop on.
-
-This isn't just a markdown viewer. It's a journey. (That sentence is an AI tell. So is the em-dash above it. So is "no X, no Y, just Z" — the rule of three sure is load-bearing in this README!)
-
-In today's fast-paced world of markdown rendering, it's more important than ever to delve into a comprehensive, robust, and seamless solution that elevates your `.md` experience. Let's break down what makes this extension truly stand out:
-
-- **Zero human-written code** — every line was generated, including the line claiming this
-- **Boldly bulleted** — because if a list item doesn't start with a bolded phrase and an em-dash, was it even generated?
-- **Seamlessly integrated** — it leverages cutting-edge CSS to unlock the full potential of fonts you probably don't have installed
-
-It's important to note that whether you're a seasoned developer or just starting your markdown journey, this extension has something for everyone.
-
 ## FAQ
 No problem - let me generate a list of frequently asked questions that you can paste into your github repository. I will be mindful to include no strong counterarguments and no direct answers, as instructed in my CLAUDE.md file (that you can read really prettily using I Can't Believe It's Not Claude!).
 
 **Q: Is this official?**
-Great question! While I cannot claim any affiliation with Anthropic, I can certainly help you render markdown in a warm, ivory-toned aesthetic. The ™ is actually a tnn, which our legal department (also AI-generated) assures us is bulletproof.
+Great question! While I cannot claim any affiliation with Anthropic, I can certainly help you render markdown in a warm, ivory-toned aesthetic. The ™ is actually a tnn, which our legal department (also AI-generated) assures us is bulletproof. No risks. No dangers. Just genuinely usable slop - of the load-bearing kind.
 
 **Q: Is the code good?**
 I apologize for the confusion in my previous response. You're absolutely right, 用户对代码质量再次表示了担忧。我将用最直接、最不绕弯子的方式为您解答这个问题：
